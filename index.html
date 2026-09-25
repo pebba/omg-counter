@@ -151,54 +151,27 @@
   .mine { font-size: .95rem; margin: .35rem 0 0; }
   .small.danger { background: var(--pop); color: #fff; }
   .small[hidden] { display: none; }
-  .gasp:disabled, .abs-btn:disabled { cursor: progress; opacity: .6; }
+  .gasp:disabled { cursor: progress; opacity: .6; }
   .floater.other { font-size: 1rem !important; color: var(--sky); animation-duration: 1.8s; }
 
-  .abs { margin-top: 3rem; padding-top: 2rem; border-top: 4px dashed var(--ink); display: grid; justify-items: center; }
-  .abs-btn {
-    width: min(64vw, 240px);
-    border: 5px solid var(--ink); border-radius: 32px;
-    background: var(--pop); color: #fff;
-    box-shadow: 0 10px 0 var(--shadow);
-    padding: 1rem .75rem 1.1rem; cursor: pointer;
-    transition: transform .08s ease, box-shadow .08s ease;
-    -webkit-tap-highlight-color: transparent;
-    display: grid; justify-items: center; gap: .3rem;
-  }
-  .abs-btn:hover { transform: translateY(-2px) rotate(2deg); box-shadow: 0 12px 0 var(--shadow); }
-  .abs-btn:active, .abs-btn.pressed { transform: translateY(8px); box-shadow: 0 2px 0 var(--shadow); }
-  .abs-btn:focus-visible { outline: 5px dashed var(--sky); outline-offset: 8px; }
-  .abs-btn svg { width: 110px; height: 110px; display: block; }
-  .abs-btn .word {
-    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
-    font-size: 1.7rem; line-height: 1;
-    -webkit-text-stroke: 1px var(--ink);
-    text-shadow: 3px 3px 0 var(--ink);
-  }
-  .abs-btn.nod svg { animation: nod .4s ease; }
-  @keyframes nod { 30% { transform: translateY(8px) rotate(-3deg); } 60% { transform: translateY(-3px); } }
-  .abs-count {
-    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
-    font-size: clamp(2.6rem, 12vw, 4.2rem); line-height: 1; margin: 1.4rem 0 .2rem;
-    font-variant-numeric: tabular-nums;
-  }
-  .abs-count.bump { animation: bump .25s ease; }
-  .abs-rank {
-    display: inline-block; margin-top: 1rem;
-    background: var(--pop); color: #fff;
-    padding: .5rem 1rem; border-radius: 999px; font-weight: 800;
-  }
-  .floater.abs-float { color: var(--sky); }
-  @media (prefers-reduced-motion: reduce) { .abs-btn.nod svg, .abs-count.bump { animation: none !important; } }
-
-  .who { display: flex; gap: .6rem; align-items: center; justify-content: center; flex-wrap: wrap; margin: -1rem 0 2rem; font-weight: 600; }
+  .who { display: flex; gap: .5rem; align-items: center; justify-content: flex-end; margin: -1rem 0 1rem; font-size: .85rem; font-weight: 600; }
   .who input {
-    font: 600 1rem "Rubik", system-ui, sans-serif;
+    font: 600 .9rem "Rubik", system-ui, sans-serif;
     background: var(--paper); color: var(--ink);
-    border: 3px solid var(--ink); border-radius: 12px;
-    padding: .45rem .75rem; width: 12rem; max-width: 70vw;
-    box-shadow: 3px 3px 0 var(--shadow);
+    border: 2px solid var(--ink); border-radius: 10px;
+    padding: .3rem .6rem; width: 9rem; max-width: 50vw;
+    box-shadow: 2px 2px 0 var(--shadow);
   }
+  .undo {
+    font: 600 .85rem "Rubik", system-ui, sans-serif;
+    background: none; border: 0; color: var(--ink); opacity: .75;
+    text-decoration: underline; cursor: pointer;
+    display: block; padding: .3rem .6rem; margin: .2rem auto 0;
+    visibility: hidden;
+  }
+  .undo.show { visibility: visible; }
+  .undo:hover { opacity: 1; }
+  .undo:focus-visible { outline: 3px dashed var(--pop); outline-offset: 2px; }
   .who input:focus-visible { outline: 3px dashed var(--pop); outline-offset: 3px; }
   .last { font-size: .95rem; margin: .7rem auto 0; max-width: 40ch; line-height: 1.45; min-height: 1.4em; }
   .last strong { font-weight: 800; }
@@ -207,13 +180,13 @@
 </head>
 <body>
 <main>
-  <h1>Oh My Gosh!</h1>
-  <p class="sub">Something shocking happened? Press the face. Everyone on this page shares the same counters, live.</p>
-
   <div class="who">
-    <label for="nick">Your nickname</label>
+    <label for="nick">Nickname</label>
     <input id="nick" type="text" maxlength="24" autocomplete="nickname" placeholder="Someone">
   </div>
+
+  <h1>Oh My Gosh!</h1>
+  <p class="sub">Something shocking happened? Press the face. Everyone on this page shares the same counter, live.</p>
 
   <div class="stage">
     <div class="bubble" id="bubble" aria-hidden="true">press me, I dare you</div>
@@ -243,32 +216,12 @@
 
   <div class="count" id="count">…</div>
   <p class="count-label" id="countLabel">oh my goshes</p>
+  <button class="undo" id="undo" type="button">undo last press</button>
 
   <div class="rank" id="rank">Totally unbothered</div>
   <p class="next" id="next"></p>
   <p class="last" id="omgLast"></p>
   <p class="status" id="status"></p>
-
-  <section class="abs" aria-label="Absolutely counter">
-    <button class="abs-btn" id="absBtn" aria-label="Say absolutely">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle cx="60" cy="60" r="52" fill="#FFE44D" stroke="#2B0B3F" stroke-width="5"/>
-        <!-- sunglasses -->
-        <rect x="22" y="40" width="32" height="20" rx="8" fill="#2B0B3F"/>
-        <rect x="66" y="40" width="32" height="20" rx="8" fill="#2B0B3F"/>
-        <rect x="52" y="45" width="16" height="5" fill="#2B0B3F"/>
-        <rect x="28" y="44" width="10" height="4" rx="2" fill="#7FD6FF"/>
-        <rect x="72" y="44" width="10" height="4" rx="2" fill="#7FD6FF"/>
-        <!-- confident grin -->
-        <path d="M36 76 q24 22 48 0" fill="none" stroke="#2B0B3F" stroke-width="6" stroke-linecap="round"/>
-      </svg>
-      <span class="word">Absolutely.</span>
-    </button>
-    <div class="abs-count" id="absCount">…</div>
-    <p class="count-label" id="absLabel">absolutelys</p>
-    <p class="abs-rank" id="absRank">Undecided</p>
-    <p class="last" id="absLast"></p>
-  </section>
 
   <div class="controls">
     <button class="small" id="sound" aria-pressed="true">Sound: on</button>
@@ -297,10 +250,10 @@ const firebaseConfig = {
 const SOUND_KEY = "omg-sound";
 const NICK_KEY = "omg-nick";
 const MAX_PER_WRITE = 10;      // must match firestore.rules
-const FLUSH_MS = 350;
+const FLUSH_MS = 4000;         // presses wait this long before sending, so they can be undone (rules forbid lowering a count)
 
 const $ = id => document.getElementById(id);
-const btn = $("gasp"), absBtn = $("absBtn"), statusEl = $("status"), bubble = $("bubble"),
+const btn = $("gasp"), undoBtn = $("undo"), statusEl = $("status"), bubble = $("bubble"),
       mouth = $("mouth"), hands = $("hands"), live = $("live"), soundBtn = $("sound"), nickInput = $("nick");
 
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
@@ -331,17 +284,6 @@ const counters = {
       [1000, "Gasped so hard it echoed"], [2500, "Legally a gasp"],
       [5000, "Oh my gosh has become everyone's personality"]],
     rankEl: $("rank"), nextEl: $("next")
-  },
-  abs: {
-    button: absBtn, countEl: $("absCount"), labelEl: $("absLabel"), lastEl: $("absLast"),
-    one: "absolutely", many: "absolutelys", lastWord: "absolutely",
-    phrases: ["absolutely", "ABSOLUTELY", "abso-freaking-lutely", "100%", "no doubt",
-      "absolutely, yes", "couldn't agree more", "yes yes yes", "obviously", "totally",
-      "without question", "A-B-S-O-L-U-T-E-L-Y"],
-    ranks: [[0, "Undecided"], [1, "Agreeable"], [10, "Nodding along"], [25, "Firm yes"],
-      [50, "Certified yes-person"], [100, "Hype machine"], [250, "Professional agreer"],
-      [500, "Has never said no"], [1000, "Agreement incarnate"]],
-    rankEl: $("absRank"), nextEl: null
   }
 };
 for (const key in counters) {
@@ -407,6 +349,7 @@ function render() {
     mouth.setAttribute("ry", (16 + level * 14).toFixed(1));
     hands.setAttribute("opacity", shown(omg) >= 25 ? "1" : "0");
   }
+  undoBtn.classList.toggle("show", omg.queued > 0);
   soundBtn.textContent = "Sound: " + (soundOn ? "on" : "off");
   soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
 }
@@ -432,7 +375,6 @@ function tone(steps, type) {
   } catch (e) {}
 }
 const gaspSound = () => { const b = 280 + Math.random() * 160; tone([[b, b * 2.4, 0, 0.35]], "triangle"); };
-const absSound = () => tone([[523, 0, 0, 0.25], [784, 0, 0.11, 0.25]], "sine");
 
 function floater(text, source, extraClass) {
   const el = document.createElement("div");
@@ -461,8 +403,19 @@ let db = null;
 
 function scheduleFlush(key) {
   const c = counters[key];
-  if (c.queued >= MAX_PER_WRITE) { clearTimeout(c.timer); c.timer = null; flush(key); return; }
-  if (!c.timer) c.timer = setTimeout(() => { c.timer = null; flush(key); }, FLUSH_MS);
+  clearTimeout(c.timer); c.timer = null;
+  // over the per-write cap: send a full batch now but keep the newest press queued, so it stays undoable
+  if (c.queued > MAX_PER_WRITE) { flush(key); return; }
+  c.timer = setTimeout(() => { c.timer = null; flush(key); }, FLUSH_MS);
+}
+
+function undo() {
+  const c = counters.omg;
+  if (c.queued === 0) return;
+  c.queued--;
+  if (c.queued === 0) { clearTimeout(c.timer); c.timer = null; }
+  live.textContent = "Last press undone";
+  render();
 }
 
 function flush(key) {
@@ -495,11 +448,10 @@ function press(key) {
   c.queued++;
   scheduleFlush(key);
   const phrase = c.phrases[Math.floor(Math.random() * c.phrases.length)];
-  if (key === "omg") { bubble.textContent = phrase; floater(phrase, btn); gaspSound(); restart(c.countEl, "bump"); }
-  else { floater(phrase, absBtn, "abs-float"); absSound(); restart(absBtn, "nod"); restart(c.countEl, "bump"); }
+  bubble.textContent = phrase; floater(phrase, btn); gaspSound(); restart(c.countEl, "bump");
   const after = rankFor(shown(c), c.ranks).current;
   if (after !== before) {
-    if (key === "omg") restart(document.body, "shake");
+    restart(document.body, "shake");
     live.textContent = `New level: ${after[1]}`;
   }
   render();
@@ -510,13 +462,13 @@ function listen(key) {
   onSnapshot(doc(db, "counters", key), snap => {
     const d = snap.data({ serverTimestamps: "estimate" }) || {};
     const newCount = typeof d.count === "number" ? d.count : 0;
-    // A server-confirmed rise that we didn't cause = someone else pressed
+    // A server-confirmed rise that we didn't cause = someone else pressed (queued presses aren't sent yet)
     if (c.prevServerCount !== null && newCount > c.prevServerCount &&
-        !snap.metadata.hasPendingWrites && c.inFlight === 0 && c.queued === 0) {
+        !snap.metadata.hasPendingWrites && c.inFlight === 0) {
       const who = typeof d.lastBy === "string" && d.lastBy ? d.lastBy : "Someone";
       const burst = Math.min(newCount - c.prevServerCount, 3);
       for (let i = 0; i < burst; i++) {
-        setTimeout(() => floater(`${who}: ${c.lastWord}`, null, "other" + (key === "abs" ? " abs-float" : "")), i * 180);
+        setTimeout(() => floater(`${who}: ${c.lastWord}`, null, "other"), i * 180);
       }
       restart(c.countEl, "bump");
     }
@@ -530,14 +482,12 @@ function listen(key) {
 }
 
 btn.disabled = true;
-absBtn.disabled = true;
 if (!configured) {
   setStatus("Not connected yet: paste your Firebase config into index.html.");
 } else {
   try {
     db = getFirestore(initializeApp(firebaseConfig));
     listen("omg");
-    listen("abs");
   } catch (e) {
     setStatus("Couldn't start the shared counter. Check the Firebase config.");
   }
@@ -549,11 +499,9 @@ document.addEventListener("visibilitychange", () => {
 });
 
 btn.addEventListener("click", () => press("omg"));
-absBtn.addEventListener("click", () => press("abs"));
-for (const b of [btn, absBtn]) {
-  b.addEventListener("pointerdown", () => b.classList.add("pressed"));
-  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("pressed")));
-}
+undoBtn.addEventListener("click", undo);
+btn.addEventListener("pointerdown", () => btn.classList.add("pressed"));
+["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, () => btn.classList.remove("pressed")));
 soundBtn.addEventListener("click", () => { soundOn = !soundOn; save(SOUND_KEY, soundOn ? "1" : "0"); render(); });
 
 const pL = $("pupilL"), pR = $("pupilR");
