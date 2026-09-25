@@ -3,27 +3,68 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // For a trusted group: one counter (counters/omg) plus a history of presses under it.
-    // A press adds a history entry (who, when, 1 to 10 presses) and raises the count in one batch.
-    // Anyone on the page may rename or delete an entry; deleting lowers the count by the
-    // entry's size in the same transaction. The count can never go below 0.
+    // A press adds a history entry (who, when, 1 to 10 presses) and raises the count by exactly
+    // that entry's size in the same batch. Anyone on the page may rename or delete an entry;
+    // deleting lowers the count by exactly the entry's size in the same transaction.
+    // The counter's `last` field names the entry being added or deleted, so each rule can check
+    // the other side of the write. The count can never go below 0 or be set directly.
     match /counters/omg {
       allow read: if true;
-      allow create, update: if request.resource.data.keys().hasOnly(['count'])
-        && request.resource.data.count is int
-        && request.resource.data.count >= 0;
+      allow create: if validCounter() && pressAdded(0);
+      allow update: if validCounter()
+        && (pressAdded(resource.data.count) || pressRemoved(resource.data.count));
 
       match /presses/{pressId} {
-        allow read, delete: if true;
+        allow read: if true;
         allow create: if request.resource.data.keys().hasOnly(['by', 'at', 'n'])
           && request.resource.data.keys().hasAll(['by', 'at', 'n'])
           && validName(request.resource.data.by)
           && request.resource.data.at == request.time
           && request.resource.data.n is int
           && request.resource.data.n >= 1
-          && request.resource.data.n <= 10;
+          && request.resource.data.n <= 10
+          && counterMovedBy(pressId, request.resource.data.n);
+        allow delete: if counterMovedBy(pressId, -resource.data.n);
         allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['by'])
           && validName(request.resource.data.by);
       }
+    }
+
+    function counterPath() {
+      return /databases/$(database)/documents/counters/omg;
+    }
+
+    function pressPath(id) {
+      return /databases/$(database)/documents/counters/omg/presses/$(id);
+    }
+
+    function validCounter() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['count', 'last'])
+        && d.count is int
+        && d.count >= 0
+        && d.last is string;
+    }
+
+    // This write creates presses/{last} and raises the count by its size.
+    function pressAdded(before) {
+      let p = pressPath(request.resource.data.last);
+      return !exists(p) && existsAfter(p)
+        && request.resource.data.count == before + getAfter(p).data.n;
+    }
+
+    // This write deletes presses/{last} and lowers the count by its size.
+    function pressRemoved(before) {
+      let p = pressPath(request.resource.data.last);
+      return exists(p) && !existsAfter(p)
+        && request.resource.data.count == before - get(p).data.n;
+    }
+
+    // The same write points the counter at this entry and moves the count by delta.
+    function counterMovedBy(pressId, delta) {
+      let after = getAfter(counterPath()).data;
+      let before = exists(counterPath()) ? get(counterPath()).data.count : 0;
+      return after.get('last', '') == pressId && after.count == before + delta;
     }
 
     function validName(n) {

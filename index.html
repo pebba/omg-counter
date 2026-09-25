@@ -307,6 +307,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js";
 import {
   getFirestore, doc, collection, query, where, orderBy, limit, onSnapshot,
   writeBatch, runTransaction, updateDoc, increment, serverTimestamp
@@ -321,6 +322,8 @@ const firebaseConfig = {
   messagingSenderId: "672007046877",
   appId: "1:672007046877:web:491ceda64fd048724d7d34"
 };
+// reCAPTCHA v3 site key for Firebase App Check (public too). Empty = App Check off. See README.
+const APP_CHECK_SITE_KEY = "";
 
 const SOUND_KEY = "omg-sound";
 const NICK_KEY = "omg-nick";
@@ -517,9 +520,11 @@ function flush() {
   queued -= n;
   inFlight++;
   // One batch: raise the total and add a history entry. The local cache applies it immediately.
+  // `last` names the new entry so firestore.rules can check the count moved by exactly n.
+  const pressRef = doc(pressesRef);
   const batch = writeBatch(db);
-  batch.set(counterRef, { count: increment(n) }, { merge: true });
-  batch.set(doc(pressesRef), { by: cleanName(nickInput.value), at: serverTimestamp(), n });
+  batch.set(counterRef, { count: increment(n), last: pressRef.id }, { merge: true });
+  batch.set(pressRef, { by: cleanName(nickInput.value), at: serverTimestamp(), n });
   batch.commit()
     .then(() => { if (statusEl.dataset.err) { setStatus(""); delete statusEl.dataset.err; } })
     .catch(err => {
@@ -584,7 +589,7 @@ dlg.addEventListener("close", () => {
         const snap = await tx.get(ref);
         if (!snap.exists()) return;
         tx.delete(ref);
-        tx.update(counterRef, { count: increment(-snap.data().n) });
+        tx.update(counterRef, { count: increment(-snap.data().n), last: ref.id });
       })
     : updateDoc(ref, { by: cleanName(dlgName.value) });
   job.then(() => { live.textContent = mode === "delete" ? "Press deleted" : "Press renamed"; })
@@ -636,7 +641,11 @@ function toEntry(s) {
 
 btn.disabled = true;
 try {
-  db = getFirestore(initializeApp(firebaseConfig));
+  const app = initializeApp(firebaseConfig);
+  if (APP_CHECK_SITE_KEY) {
+    initializeAppCheck(app, { provider: new ReCaptchaV3Provider(APP_CHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+  }
+  db = getFirestore(app);
   counterRef = doc(db, "counters", "omg");
   pressesRef = collection(counterRef, "presses");
   listen();
