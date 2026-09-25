@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Only two public documents exist: counters/omg and counters/abs.
+    // Everyone may read them. Writes may only raise a count by 1 to 10,
+    // must stamp the server time, and may set a short nickname.
+    // Nobody can lower, overwrite or delete a count from the page.
+    // Reset from the Firebase console (delete the document).
+    match /counters/{counterId} {
+      allow read: if counterId in ['omg', 'abs'];
+
+      allow create: if counterId in ['omg', 'abs']
+        && hasExactShape()
+        && request.resource.data.count >= 1
+        && request.resource.data.count <= 10
+        && request.resource.data.lastAt == request.time
+        && validNickname(request.resource.data.lastBy);
+
+      allow update: if counterId in ['omg', 'abs']
+        && hasExactShape()
+        && request.resource.data.count > resource.data.count
+        && request.resource.data.count <= resource.data.count + 10
+        && request.resource.data.lastAt == request.time
+        && validNickname(request.resource.data.lastBy);
+
+      allow delete: if false;
+    }
+
+    function hasExactShape() {
+      return request.resource.data.keys().hasOnly(['count', 'lastAt', 'lastBy'])
+        && request.resource.data.keys().hasAll(['count', 'lastAt', 'lastBy'])
+        && request.resource.data.count is int;
+    }
+
+    function validNickname(n) {
+      return n is string && n.size() >= 1 && n.size() <= 24;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

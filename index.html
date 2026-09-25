@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oh My Gosh Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFE44D;
+    --ink: #2B0B3F;
+    --pop: #E6007E;
+    --sky: #7FD6FF;
+    --paper: #FFFFFF;
+    --shadow: #2B0B3F;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #2B0B3F; --ink: #FFE44D; --pop: #FF4FB0; --sky: #4FB8E8; --paper: #3E1759; --shadow: #000000;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #2B0B3F; --ink: #FFE44D; --pop: #FF4FB0; --sky: #4FB8E8; --paper: #3E1759; --shadow: #000000;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; min-height: 100%;
+    background: var(--bg);
+    background-image: radial-gradient(var(--pop) 1.5px, transparent 1.6px);
+    background-size: 26px 26px;
+    color: var(--ink);
+    font-family: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow-x: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+  }
+  main { width: 100%; max-width: 640px; padding: 2rem 1.25rem 3rem; position: relative; }
+
+  h1 {
+    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(2.6rem, 11vw, 4.6rem);
+    line-height: .95;
+    margin: .5rem 0 .25rem;
+    color: var(--pop);
+    -webkit-text-stroke: 2px var(--ink);
+    text-shadow: 5px 5px 0 var(--ink);
+    transform: rotate(-3deg);
+  }
+  .sub { font-size: 1.05rem; margin: 1rem auto 2rem; max-width: 34ch; line-height: 1.5; }
+
+  .stage { position: relative; display: grid; place-items: center; margin: 1rem 0 1.5rem; }
+
+  .bubble {
+    position: absolute; top: -1.4rem; right: 4%;
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 18px;
+    padding: .5rem .9rem; font-weight: 800; font-size: 1.05rem;
+    box-shadow: 4px 4px 0 var(--shadow);
+    transform: rotate(6deg);
+    max-width: 55%;
+    z-index: 2;
+  }
+  .bubble::after {
+    content: ""; position: absolute; left: 18px; bottom: -14px;
+    border: 7px solid transparent; border-top-color: var(--ink);
+    border-left-color: var(--ink);
+  }
+
+  .gasp {
+    width: min(68vw, 280px); aspect-ratio: 1;
+    border-radius: 50%;
+    border: 5px solid var(--ink);
+    background: var(--sky);
+    box-shadow: 0 12px 0 var(--shadow);
+    cursor: pointer;
+    padding: 0;
+    transition: transform .08s ease, box-shadow .08s ease;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+  .gasp:hover { transform: translateY(-2px) rotate(-2deg); box-shadow: 0 14px 0 var(--shadow); }
+  .gasp:active, .gasp.pressed { transform: translateY(10px); box-shadow: 0 2px 0 var(--shadow); }
+  .gasp:focus-visible { outline: 5px dashed var(--pop); outline-offset: 8px; }
+  .gasp svg { width: 100%; height: 100%; display: block; }
+  .face-ink { fill: var(--ink); }
+  #mouth { transition: ry .12s ease, rx .12s ease; }
+
+  .count {
+    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
+    font-size: clamp(3.5rem, 18vw, 6.5rem);
+    line-height: 1; margin: 1.6rem 0 .2rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .count.bump { animation: bump .25s ease; }
+  @keyframes bump { 50% { transform: scale(1.18) rotate(2deg); color: var(--pop); } }
+  .count-label { font-weight: 600; margin: 0; }
+
+  .rank {
+    display: inline-block; margin-top: 1.4rem;
+    background: var(--ink); color: var(--bg);
+    padding: .55rem 1.1rem; border-radius: 999px;
+    font-weight: 800; font-size: 1.1rem;
+  }
+  .next { font-size: .95rem; margin: .7rem 0 0; opacity: .85; }
+
+  .controls { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 2.2rem; }
+  .small {
+    font: 600 .95rem "Rubik", system-ui, sans-serif;
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 12px;
+    padding: .5rem 1rem; cursor: pointer;
+    box-shadow: 3px 3px 0 var(--shadow);
+  }
+  .small:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
+  .small:focus-visible { outline: 3px dashed var(--pop); outline-offset: 3px; }
+
+  .floater {
+    position: fixed; pointer-events: none; z-index: 10;
+    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
+    color: var(--pop); -webkit-text-stroke: 1px var(--ink);
+    white-space: nowrap;
+    animation: floatUp 1.3s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translate(-50%, 0) scale(.6) rotate(var(--r)); }
+    15% { opacity: 1; transform: translate(-50%, -20px) scale(1.1) rotate(var(--r)); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), -160px) scale(1) rotate(var(--r)); }
+  }
+  body.shake main { animation: shake .35s; }
+  @keyframes shake {
+    20% { transform: translate(-6px, 2px) rotate(-1deg); }
+    40% { transform: translate(6px, -2px) rotate(1deg); }
+    60% { transform: translate(-4px, 1px); }
+    80% { transform: translate(3px, -1px); }
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floater, .count.bump, body.shake main { animation: none !important; }
+    .floater { display: none; }
+  }
+
+  .status { font-size: .9rem; margin: .8rem auto 0; max-width: 40ch; line-height: 1.45; opacity: .85; min-height: 1.3em; }
+  .mine { font-size: .95rem; margin: .35rem 0 0; }
+  .small.danger { background: var(--pop); color: #fff; }
+  .small[hidden] { display: none; }
+  .gasp:disabled, .abs-btn:disabled { cursor: progress; opacity: .6; }
+  .floater.other { font-size: 1rem !important; color: var(--sky); animation-duration: 1.8s; }
+
+  .abs { margin-top: 3rem; padding-top: 2rem; border-top: 4px dashed var(--ink); display: grid; justify-items: center; }
+  .abs-btn {
+    width: min(64vw, 240px);
+    border: 5px solid var(--ink); border-radius: 32px;
+    background: var(--pop); color: #fff;
+    box-shadow: 0 10px 0 var(--shadow);
+    padding: 1rem .75rem 1.1rem; cursor: pointer;
+    transition: transform .08s ease, box-shadow .08s ease;
+    -webkit-tap-highlight-color: transparent;
+    display: grid; justify-items: center; gap: .3rem;
+  }
+  .abs-btn:hover { transform: translateY(-2px) rotate(2deg); box-shadow: 0 12px 0 var(--shadow); }
+  .abs-btn:active, .abs-btn.pressed { transform: translateY(8px); box-shadow: 0 2px 0 var(--shadow); }
+  .abs-btn:focus-visible { outline: 5px dashed var(--sky); outline-offset: 8px; }
+  .abs-btn svg { width: 110px; height: 110px; display: block; }
+  .abs-btn .word {
+    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
+    font-size: 1.7rem; line-height: 1;
+    -webkit-text-stroke: 1px var(--ink);
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+  .abs-btn.nod svg { animation: nod .4s ease; }
+  @keyframes nod { 30% { transform: translateY(8px) rotate(-3deg); } 60% { transform: translateY(-3px); } }
+  .abs-count {
+    font-family: "Shrikhand", "Cooper Black", Georgia, serif;
+    font-size: clamp(2.6rem, 12vw, 4.2rem); line-height: 1; margin: 1.4rem 0 .2rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .abs-count.bump { animation: bump .25s ease; }
+  .abs-rank {
+    display: inline-block; margin-top: 1rem;
+    background: var(--pop); color: #fff;
+    padding: .5rem 1rem; border-radius: 999px; font-weight: 800;
+  }
+  .floater.abs-float { color: var(--sky); }
+  @media (prefers-reduced-motion: reduce) { .abs-btn.nod svg, .abs-count.bump { animation: none !important; } }
+
+  .who { display: flex; gap: .6rem; align-items: center; justify-content: center; flex-wrap: wrap; margin: -1rem 0 2rem; font-weight: 600; }
+  .who input {
+    font: 600 1rem "Rubik", system-ui, sans-serif;
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 12px;
+    padding: .45rem .75rem; width: 12rem; max-width: 70vw;
+    box-shadow: 3px 3px 0 var(--shadow);
+  }
+  .who input:focus-visible { outline: 3px dashed var(--pop); outline-offset: 3px; }
+  .last { font-size: .95rem; margin: .7rem auto 0; max-width: 40ch; line-height: 1.45; min-height: 1.4em; }
+  .last strong { font-weight: 800; }
+  .floater.other { font-size: 1rem !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Oh My Gosh!</h1>
+  <p class="sub">Something shocking happened? Press the face. Everyone on this page shares the same counters, live.</p>
+
+  <div class="who">
+    <label for="nick">Your nickname</label>
+    <input id="nick" type="text" maxlength="24" autocomplete="nickname" placeholder="Someone">
+  </div>
+
+  <div class="stage">
+    <div class="bubble" id="bubble" aria-hidden="true">press me, I dare you</div>
+    <button class="gasp" id="gasp" aria-label="Say oh my gosh">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <!-- eyebrows -->
+        <path id="browL" class="face-ink" d="M52 62 q18 -14 36 -4 l-2 7 q-15 -8 -32 4 z"/>
+        <path id="browR" class="face-ink" d="M148 62 q-18 -14 -36 -4 l2 7 q15 -8 32 4 z"/>
+        <!-- eyes -->
+        <ellipse cx="70" cy="85" rx="15" ry="18" fill="#fff" stroke="currentColor" stroke-width="0"/>
+        <ellipse cx="130" cy="85" rx="15" ry="18" fill="#fff"/>
+        <circle id="pupilL" class="face-ink" cx="70" cy="88" r="7"/>
+        <circle id="pupilR" class="face-ink" cx="130" cy="88" r="7"/>
+        <!-- cheeks -->
+        <ellipse cx="45" cy="120" rx="12" ry="7" fill="#E6007E" opacity=".45"/>
+        <ellipse cx="155" cy="120" rx="12" ry="7" fill="#E6007E" opacity=".45"/>
+        <!-- mouth -->
+        <ellipse id="mouth" class="face-ink" cx="100" cy="140" rx="14" ry="16"/>
+        <!-- hands on cheeks appear at high counts -->
+        <g id="hands" opacity="0">
+          <ellipse cx="28" cy="140" rx="16" ry="24" fill="#FFD2A8" stroke="#2B0B3F" stroke-width="4"/>
+          <ellipse cx="172" cy="140" rx="16" ry="24" fill="#FFD2A8" stroke="#2B0B3F" stroke-width="4"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+
+  <div class="count" id="count">…</div>
+  <p class="count-label" id="countLabel">oh my goshes</p>
+
+  <div class="rank" id="rank">Totally unbothered</div>
+  <p class="next" id="next"></p>
+  <p class="last" id="omgLast"></p>
+  <p class="status" id="status"></p>
+
+  <section class="abs" aria-label="Absolutely counter">
+    <button class="abs-btn" id="absBtn" aria-label="Say absolutely">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="52" fill="#FFE44D" stroke="#2B0B3F" stroke-width="5"/>
+        <!-- sunglasses -->
+        <rect x="22" y="40" width="32" height="20" rx="8" fill="#2B0B3F"/>
+        <rect x="66" y="40" width="32" height="20" rx="8" fill="#2B0B3F"/>
+        <rect x="52" y="45" width="16" height="5" fill="#2B0B3F"/>
+        <rect x="28" y="44" width="10" height="4" rx="2" fill="#7FD6FF"/>
+        <rect x="72" y="44" width="10" height="4" rx="2" fill="#7FD6FF"/>
+        <!-- confident grin -->
+        <path d="M36 76 q24 22 48 0" fill="none" stroke="#2B0B3F" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <span class="word">Absolutely.</span>
+    </button>
+    <div class="abs-count" id="absCount">…</div>
+    <p class="count-label" id="absLabel">absolutelys</p>
+    <p class="abs-rank" id="absRank">Undecided</p>
+    <p class="last" id="absLast"></p>
+  </section>
+
+  <div class="controls">
+    <button class="small" id="sound" aria-pressed="true">Sound: on</button>
+  </div>
+
+  <p class="sr-only" aria-live="polite" id="live"></p>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getFirestore, doc, onSnapshot, setDoc, increment, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+// ===== Paste your Firebase web app config here (it is safe to be public) =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDl9qbvwnSafhC5ICGV3aqyxR5eJIYkSqg",
+  authDomain: "omg-counter-c8eb2.firebaseapp.com",
+  projectId: "omg-counter-c8eb2",
+  storageBucket: "omg-counter-c8eb2.firebasestorage.app",
+  messagingSenderId: "672007046877",
+  appId: "1:672007046877:web:491ceda64fd048724d7d34"
+};
+// ============================================================================
+
+const SOUND_KEY = "omg-sound";
+const NICK_KEY = "omg-nick";
+const MAX_PER_WRITE = 10;      // must match firestore.rules
+const FLUSH_MS = 350;
+
+const $ = id => document.getElementById(id);
+const btn = $("gasp"), absBtn = $("absBtn"), statusEl = $("status"), bubble = $("bubble"),
+      mouth = $("mouth"), hands = $("hands"), live = $("live"), soundBtn = $("sound"), nickInput = $("nick");
+
+const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const fmt = n => n.toLocaleString("en-US");
+
+let soundOn = load(SOUND_KEY, "1") === "1";
+let audioCtx = null;
+nickInput.value = load(NICK_KEY, "");
+nickInput.addEventListener("input", () => save(NICK_KEY, nickInput.value));
+
+function nickname() {
+  const n = nickInput.value.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24);
+  return n || "Someone";
+}
+
+// ---- counter definitions ----
+const counters = {
+  omg: {
+    button: btn, countEl: $("count"), labelEl: $("countLabel"), lastEl: $("omgLast"),
+    one: "oh my gosh", many: "oh my goshes", lastWord: "oh my gosh",
+    phrases: ["oh my gosh", "OH MY GOSH", "oh. my. gosh.", "ohhh myyy goshhh", "OMG", "oh my GOODNESS",
+      "gasp!", "no way", "oh my gosh?!", "stop it right now", "I can't even", "my stars",
+      "good gracious", "OH. MY. GOSH.", "gosh gosh gosh", "clutches pearls"],
+    ranks: [[0, "Totally unbothered"], [1, "Mildly surprised"], [10, "Raised one eyebrow"],
+      [25, "Clutching pearls"], [50, "Needs to sit down"], [100, "Fanning self dramatically"],
+      [200, "Has fainted onto a couch"], [500, "Soap opera protagonist"],
+      [1000, "Gasped so hard it echoed"], [2500, "Legally a gasp"],
+      [5000, "Oh my gosh has become everyone's personality"]],
+    rankEl: $("rank"), nextEl: $("next")
+  },
+  abs: {
+    button: absBtn, countEl: $("absCount"), labelEl: $("absLabel"), lastEl: $("absLast"),
+    one: "absolutely", many: "absolutelys", lastWord: "absolutely",
+    phrases: ["absolutely", "ABSOLUTELY", "abso-freaking-lutely", "100%", "no doubt",
+      "absolutely, yes", "couldn't agree more", "yes yes yes", "obviously", "totally",
+      "without question", "A-B-S-O-L-U-T-E-L-Y"],
+    ranks: [[0, "Undecided"], [1, "Agreeable"], [10, "Nodding along"], [25, "Firm yes"],
+      [50, "Certified yes-person"], [100, "Hype machine"], [250, "Professional agreer"],
+      [500, "Has never said no"], [1000, "Agreement incarnate"]],
+    rankEl: $("absRank"), nextEl: null
+  }
+};
+for (const key in counters) {
+  Object.assign(counters[key], {
+    loaded: false, serverCount: 0, lastAt: null, lastBy: "",
+    queued: 0, inFlight: 0, timer: null, prevServerCount: null
+  });
+}
+
+const shown = c => c.serverCount + c.queued;
+
+function rankFor(n, list) {
+  let current = list[0], next = null;
+  for (let i = 0; i < list.length; i++) {
+    if (n >= list[i][0]) { current = list[i]; next = list[i + 1] || null; }
+  }
+  return { current, next };
+}
+
+function setStatus(t) { statusEl.textContent = t; }
+
+// ---- rendering ----
+function whenText(date) {
+  const now = new Date();
+  const secs = Math.max(0, Math.round((now - date) / 1000));
+  let rel;
+  if (secs < 5) rel = "just now";
+  else if (secs < 60) rel = `${secs} s ago`;
+  else if (secs < 3600) rel = `${Math.floor(secs / 60)} min ago`;
+  else if (secs < 86400) rel = `${Math.floor(secs / 3600)} h ago`;
+  else rel = `${Math.floor(secs / 86400)} d ago`;
+  const time = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const sameDay = date.toDateString() === now.toDateString();
+  const day = sameDay ? "today" : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return `${day} at ${time} (${rel})`;
+}
+
+function renderLast(c) {
+  c.lastEl.textContent = "";
+  if (!c.loaded) return;
+  if (!c.lastAt) { c.lastEl.textContent = `Nobody has said ${c.lastWord} yet.`; return; }
+  const b = document.createElement("strong");
+  b.textContent = c.lastBy || "Someone";   // textContent only: nicknames are untrusted input
+  c.lastEl.append(`Last ${c.lastWord}: `, b, `, ${whenText(c.lastAt)}`);
+}
+
+function render() {
+  for (const key in counters) {
+    const c = counters[key];
+    if (!c.loaded) continue;
+    const n = shown(c);
+    c.countEl.textContent = fmt(n);
+    c.labelEl.textContent = n === 1 ? c.one : c.many;
+    const { current, next } = rankFor(n, c.ranks);
+    c.rankEl.textContent = current[1];
+    if (c.nextEl) c.nextEl.textContent = next ? `${fmt(next[0] - n)} more until: ${next[1]}` : "There is nothing left to be shocked by.";
+    renderLast(c);
+  }
+  const omg = counters.omg;
+  if (omg.loaded) {
+    const level = Math.min(shown(omg) / 200, 1);
+    mouth.setAttribute("rx", (14 + level * 12).toFixed(1));
+    mouth.setAttribute("ry", (16 + level * 14).toFixed(1));
+    hands.setAttribute("opacity", shown(omg) >= 25 ? "1" : "0");
+  }
+  soundBtn.textContent = "Sound: " + (soundOn ? "on" : "off");
+  soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
+}
+setInterval(() => { for (const k in counters) renderLast(counters[k]); }, 1000);
+
+// ---- effects ----
+function tone(steps, type) {
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    steps.forEach(([f1, f2, d, len]) => {
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(f1, t + d);
+      if (f2) osc.frequency.exponentialRampToValueAtTime(f2, t + d + len * 0.55);
+      gain.gain.setValueAtTime(0.0001, t + d);
+      gain.gain.exponentialRampToValueAtTime(0.25, t + d + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + d + len);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t + d); osc.stop(t + d + len + 0.01);
+    });
+  } catch (e) {}
+}
+const gaspSound = () => { const b = 280 + Math.random() * 160; tone([[b, b * 2.4, 0, 0.35]], "triangle"); };
+const absSound = () => tone([[523, 0, 0, 0.25], [784, 0, 0.11, 0.25]], "sine");
+
+function floater(text, source, extraClass) {
+  const el = document.createElement("div");
+  el.className = "floater" + (extraClass ? " " + extraClass : "");
+  el.textContent = text;
+  if (source) {
+    const r = source.getBoundingClientRect();
+    el.style.left = (r.left + r.width / 2 + (Math.random() - .5) * r.width * .6) + "px";
+    el.style.top = (r.top + r.height * .3) + "px";
+    el.style.fontSize = (1.1 + Math.random() * 1.3) + "rem";
+  } else {
+    el.style.left = (10 + Math.random() * 80) + "vw";
+    el.style.top = (55 + Math.random() * 35) + "vh";
+  }
+  el.style.setProperty("--r", ((Math.random() - .5) * 30).toFixed(0) + "deg");
+  el.style.setProperty("--dx", ((Math.random() - .5) * 140).toFixed(0) + "px");
+  document.body.appendChild(el);
+  el.addEventListener("animationend", () => el.remove());
+  setTimeout(() => el.remove(), 2500);
+}
+function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+// ---- Firebase ----
+const configured = !firebaseConfig.apiKey.startsWith("PASTE");
+let db = null;
+
+function scheduleFlush(key) {
+  const c = counters[key];
+  if (c.queued >= MAX_PER_WRITE) { clearTimeout(c.timer); c.timer = null; flush(key); return; }
+  if (!c.timer) c.timer = setTimeout(() => { c.timer = null; flush(key); }, FLUSH_MS);
+}
+
+function flush(key) {
+  const c = counters[key];
+  if (!db || c.queued === 0) return;
+  const n = Math.min(c.queued, MAX_PER_WRITE);
+  c.queued -= n;
+  c.inFlight++;
+  // The local cache applies the increment immediately, so the count stays steady on screen.
+  setDoc(doc(db, "counters", key), {
+    count: increment(n),
+    lastAt: serverTimestamp(),
+    lastBy: nickname()
+  }, { merge: true })
+    .then(() => { if (statusEl.dataset.err) { setStatus(""); delete statusEl.dataset.err; } })
+    .catch(err => {
+      statusEl.dataset.err = "1";
+      if (err.code === "resource-exhausted") setStatus("The page hit its daily limit. Presses will count again tomorrow.");
+      else if (err.code === "permission-denied") setStatus("That press was rejected by the server.");
+      else setStatus("Couldn't save that press. Check your connection.");
+    })
+    .finally(() => { c.inFlight--; });
+  if (c.queued > 0) scheduleFlush(key);
+}
+
+function press(key) {
+  const c = counters[key];
+  if (!c.loaded) return;
+  const before = rankFor(shown(c), c.ranks).current;
+  c.queued++;
+  scheduleFlush(key);
+  const phrase = c.phrases[Math.floor(Math.random() * c.phrases.length)];
+  if (key === "omg") { bubble.textContent = phrase; floater(phrase, btn); gaspSound(); restart(c.countEl, "bump"); }
+  else { floater(phrase, absBtn, "abs-float"); absSound(); restart(absBtn, "nod"); restart(c.countEl, "bump"); }
+  const after = rankFor(shown(c), c.ranks).current;
+  if (after !== before) {
+    if (key === "omg") restart(document.body, "shake");
+    live.textContent = `New level: ${after[1]}`;
+  }
+  render();
+}
+
+function listen(key) {
+  const c = counters[key];
+  onSnapshot(doc(db, "counters", key), snap => {
+    const d = snap.data({ serverTimestamps: "estimate" }) || {};
+    const newCount = typeof d.count === "number" ? d.count : 0;
+    // A server-confirmed rise that we didn't cause = someone else pressed
+    if (c.prevServerCount !== null && newCount > c.prevServerCount &&
+        !snap.metadata.hasPendingWrites && c.inFlight === 0 && c.queued === 0) {
+      const who = typeof d.lastBy === "string" && d.lastBy ? d.lastBy : "Someone";
+      const burst = Math.min(newCount - c.prevServerCount, 3);
+      for (let i = 0; i < burst; i++) {
+        setTimeout(() => floater(`${who}: ${c.lastWord}`, null, "other" + (key === "abs" ? " abs-float" : "")), i * 180);
+      }
+      restart(c.countEl, "bump");
+    }
+    c.prevServerCount = newCount;
+    c.serverCount = newCount;
+    c.lastAt = d.lastAt && typeof d.lastAt.toDate === "function" ? d.lastAt.toDate() : null;
+    c.lastBy = typeof d.lastBy === "string" ? d.lastBy : "";
+    if (!c.loaded) { c.loaded = true; c.button.disabled = false; }
+    render();
+  }, () => setStatus("Can't reach the shared counter right now. Reload to try again."));
+}
+
+btn.disabled = true;
+absBtn.disabled = true;
+if (!configured) {
+  setStatus("Not connected yet: paste your Firebase config into index.html.");
+} else {
+  try {
+    db = getFirestore(initializeApp(firebaseConfig));
+    listen("omg");
+    listen("abs");
+  } catch (e) {
+    setStatus("Couldn't start the shared counter. Check the Firebase config.");
+  }
+}
+
+// flush queued presses when the tab is hidden or closed
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") for (const k in counters) { clearTimeout(counters[k].timer); counters[k].timer = null; flush(k); }
+});
+
+btn.addEventListener("click", () => press("omg"));
+absBtn.addEventListener("click", () => press("abs"));
+for (const b of [btn, absBtn]) {
+  b.addEventListener("pointerdown", () => b.classList.add("pressed"));
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("pressed")));
+}
+soundBtn.addEventListener("click", () => { soundOn = !soundOn; save(SOUND_KEY, soundOn ? "1" : "0"); render(); });
+
+const pL = $("pupilL"), pR = $("pupilR");
+window.addEventListener("pointermove", e => {
+  const r = btn.getBoundingClientRect();
+  const dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / 300));
+  const dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / 300));
+  pL.setAttribute("cx", 70 + dx * 5); pL.setAttribute("cy", 88 + dy * 6);
+  pR.setAttribute("cx", 130 + dx * 5); pR.setAttribute("cy", 88 + dy * 6);
+});
+
+render();
+</script>
+</body>
+</html>
