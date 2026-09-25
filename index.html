@@ -172,6 +172,7 @@
     padding: .45rem 0; border-top: 2px dotted color-mix(in srgb, var(--ink) 35%, transparent);
   }
   .log .name { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log .name.unknown { font-weight: 600; opacity: .7; }
   .log time { display: block; font-size: .8rem; opacity: .8; font-variant-numeric: tabular-nums; }
   .more { font-size: .8rem; opacity: .7; margin: .6rem 0 0; }
 
@@ -307,7 +308,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import {
-  getFirestore, doc, collection, query, orderBy, limit, onSnapshot,
+  getFirestore, doc, collection, query, where, orderBy, limit, onSnapshot,
   writeBatch, runTransaction, updateDoc, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
@@ -357,7 +358,8 @@ nickInput.addEventListener("input", () => save(NICK_KEY, nickInput.value));
 // ---- state ----
 let loaded = false, serverCount = 0, prevServerCount = null;
 let queued = 0, inFlight = 0, timer = null;
-let history = [], historyLoaded = false;   // newest first: { id, by, n, at: Date|null, pending }
+// history entries: { id, by, n, at: Date|null, pending }. "untimed" = presses from before the history existed (no name, no time)
+let timed = [], untimed = [], history = [], historyLoaded = false;
 const shown = () => serverCount + queued;
 
 function rankFor(n) {
@@ -387,7 +389,7 @@ function whenText(date) {
 }
 
 function shortTime(date) {
-  if (!date) return "sending…";
+  if (!date) return "no time";
   const time = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   if (date.toDateString() === new Date().toDateString()) return time;
   return `${date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}, ${time}`;
@@ -396,11 +398,17 @@ function shortTime(date) {
 function renderLast() {
   lastEl.textContent = "";
   if (!historyLoaded) return;
-  const h = history[0];
-  if (!h) { lastEl.textContent = "No presses recorded yet."; return; }
+  const h = timed[0];
+  if (!h) { lastEl.textContent = untimed.length ? "No presses with a time yet." : "No presses recorded yet."; return; }
   const b = document.createElement("strong");
   b.textContent = h.by;   // textContent only: names are untrusted input
-  lastEl.append("Last oh my gosh: ", b, h.at ? `, ${whenText(h.at)}` : "");
+  lastEl.append("Last oh my gosh: ", b, `, ${whenText(h.at)}`);
+}
+
+function describe(h) {
+  const what = h.n > 1 ? `${h.n} presses` : "press";
+  const whose = h.by ? `${h.by}'s ${what}` : `the unnamed ${what}`;
+  return h.at ? `${whose} from ${shortTime(h.at)}` : `${whose} with no time`;
 }
 setInterval(renderLast, 1000);
 
@@ -418,19 +426,18 @@ function renderHistory() {
     const li = document.createElement("li");
     const info = document.createElement("div");
     const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = h.n > 1 ? `${h.by} ×${h.n}` : h.by;
+    name.className = h.by ? "name" : "name unknown";
+    name.textContent = (h.by || "Unknown") + (h.n > 1 ? ` ×${h.n}` : "");
     const t = document.createElement("time");
     t.textContent = shortTime(h.at);
     if (h.at) t.dateTime = h.at.toISOString();
     info.append(name, t);
-    const what = `${h.by}'s press at ${shortTime(h.at)}`;
     li.append(info,
-      linkButton("edit", `Rename ${what}`, () => openDialog("edit", h), h.pending),
-      linkButton("delete", `Delete ${what}`, () => openDialog("delete", h), h.pending));
+      linkButton("edit", `Rename ${describe(h)}`, () => openDialog("edit", h), h.pending),
+      linkButton("delete", `Delete ${describe(h)}`, () => openDialog("delete", h), h.pending));
     return li;
   }));
-  moreEl.hidden = history.length < HISTORY_SIZE;
+  moreEl.hidden = timed.length < HISTORY_SIZE;
   moreEl.textContent = `Showing the latest ${HISTORY_SIZE}.`;
   renderLast();
 }
@@ -553,12 +560,11 @@ let dlgMode = null, dlgTarget = null;
 
 function openDialog(mode, h) {
   dlgMode = mode; dlgTarget = h;
-  const what = h.n > 1 ? `${h.n} presses` : "press";
   if (mode === "delete") {
-    dlgText.textContent = `Delete ${h.by}'s ${what} from ${shortTime(h.at)}? The total goes down by ${h.n}. This can't be undone.`;
+    dlgText.textContent = `Delete ${describe(h)}? The total goes down by ${h.n}. This can't be undone.`;
     dlgOk.textContent = "Delete"; dlgOk.classList.add("danger");
   } else {
-    dlgText.textContent = `Rename the ${what} from ${shortTime(h.at)}.`;
+    dlgText.textContent = `Rename ${describe(h)}.`;
     dlgOk.textContent = "Save"; dlgOk.classList.remove("danger");
     dlgName.value = h.by;
   }
@@ -608,13 +614,24 @@ function listen() {
         }
       }
     }
-    history = snap.docs.map(s => {
-      const d = s.data({ serverTimestamps: "estimate" });
-      return { id: s.id, by: d.by, n: d.n, at: d.at ? d.at.toDate() : null, pending: s.metadata.hasPendingWrites };
-    });
+    // at == null entries sort last here and are shown by the listener below instead
+    timed = snap.docs.map(toEntry).filter(h => h.at);
+    history = [...timed, ...untimed];
     historyLoaded = true;
     renderHistory();
   }, () => setStatus("Can't load the history right now. Reload to try again."));
+
+  // separate query so newer presses never push these out of the list
+  onSnapshot(query(pressesRef, where("at", "==", null)), snap => {
+    untimed = snap.docs.map(toEntry);
+    history = [...timed, ...untimed];
+    renderHistory();
+  }, () => setStatus("Can't load the history right now. Reload to try again."));
+}
+
+function toEntry(s) {
+  const d = s.data({ serverTimestamps: "estimate" });
+  return { id: s.id, by: d.by || "", n: d.n, at: d.at ? d.at.toDate() : null, pending: s.metadata.hasPendingWrites };
 }
 
 btn.disabled = true;
