@@ -1,15 +1,18 @@
 # Oh My Gosh Counter
 
-A public page with one shared "Oh my gosh" counter. Everyone sees the same count live, and the page shows who pressed it last and when.
+A page for a trusted group with one shared "Oh my gosh" counter. Everyone sees the count live, plus a history of who pressed and when.
 
-Each press waits 4 seconds on your screen before it is sent, so "undo last press" can take it back. Once sent, it stays: the rules never allow lowering the count.
+- Each press waits 4 seconds before it is sent, so "undo last press" can take it back.
+- After that, fix mistakes in the History panel: rename an entry, or delete it (behind a confirm step), which lowers the total by that entry's size.
+
+Files:
 
 - `index.html`: the whole page, hosted on GitHub Pages
-- `firestore.rules`: Firestore security rules (reads open, writes can only add 1 to 10 per request)
-- `firebase.json`: lets `firebase deploy --only firestore:rules` find the rules
+- `firestore.rules`: Firestore security rules (the counter plus its `presses` history; anything else is closed)
+- `firebase.json` / `.firebaserc`: let `firebase deploy --only firestore:rules` find the rules and the project
 
-Backend: Cloud Firestore on the free Spark plan. The Firebase web config inside `index.html` is public by design; the rules protect the data.
+Backend: Cloud Firestore on the free Spark plan. The Firebase web config inside `index.html` is public by design; the rules decide what can be written. They trust whoever has the page, so keep the URL within the group.
 
 ## Reset the counter
 
-Firebase console → Firestore → `counters` → delete the `omg` document. It is recreated at 1 on the next press.
+Firebase console → Firestore → `counters` → `omg`: edit `count`, and delete entries under `presses` if you want the history cleared too.

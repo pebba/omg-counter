@@ -37,10 +37,31 @@
     color: var(--ink);
     font-family: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
     overflow-x: hidden;
-    display: flex; flex-direction: column; align-items: center;
     text-align: center;
   }
-  main { width: 100%; max-width: 640px; padding: 2rem 1.25rem 3rem; position: relative; }
+
+  /* phone: one column. laptop: nickname + level | face | history */
+  .page {
+    max-width: 1240px; margin: 0 auto; padding: 1rem 1.25rem 3rem;
+    display: grid; gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "who" "center" "stats" "history";
+  }
+  .who { grid-area: who; }
+  main { grid-area: center; position: relative; }
+  .stats { grid-area: stats; }
+  .history { grid-area: history; }
+
+  .panel {
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--shadow);
+    padding: 1rem 1.2rem; text-align: left;
+  }
+  .panel h2 {
+    font-family: "Shrikhand", "Cooper Black", Georgia, serif; font-weight: 400;
+    font-size: 1.4rem; margin: 0 0 .5rem; color: var(--pop);
+  }
 
   h1 {
     font-family: "Shrikhand", "Cooper Black", Georgia, serif;
@@ -53,9 +74,8 @@
     text-shadow: 5px 5px 0 var(--ink);
     transform: rotate(-3deg);
   }
-  .sub { font-size: 1.05rem; margin: 1rem auto 2rem; max-width: 34ch; line-height: 1.5; }
 
-  .stage { position: relative; display: grid; place-items: center; margin: 1rem 0 1.5rem; }
+  .stage { position: relative; display: grid; place-items: center; margin: 2rem 0 1.5rem; }
 
   .bubble {
     position: absolute; top: -1.4rem; right: 4%;
@@ -74,7 +94,7 @@
   }
 
   .gasp {
-    width: min(68vw, 280px); aspect-ratio: 1;
+    width: min(68vw, 280px, 40vh); aspect-ratio: 1;
     border-radius: 50%;
     border: 5px solid var(--ink);
     background: var(--sky);
@@ -88,6 +108,7 @@
   .gasp:hover { transform: translateY(-2px) rotate(-2deg); box-shadow: 0 14px 0 var(--shadow); }
   .gasp:active, .gasp.pressed { transform: translateY(10px); box-shadow: 0 2px 0 var(--shadow); }
   .gasp:focus-visible { outline: 5px dashed var(--pop); outline-offset: 8px; }
+  .gasp:disabled { cursor: progress; opacity: .6; }
   .gasp svg { width: 100%; height: 100%; display: block; }
   .face-ink { fill: var(--ink); }
   #mouth { transition: ry .12s ease, rx .12s ease; }
@@ -103,14 +124,13 @@
   .count-label { font-weight: 600; margin: 0; }
 
   .rank {
-    display: inline-block; margin-top: 1.4rem;
+    display: inline-block;
     background: var(--ink); color: var(--bg);
     padding: .55rem 1.1rem; border-radius: 999px;
     font-weight: 800; font-size: 1.1rem;
   }
   .next { font-size: .95rem; margin: .7rem 0 0; opacity: .85; }
 
-  .controls { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 2.2rem; }
   .small {
     font: 600 .95rem "Rubik", system-ui, sans-serif;
     background: var(--paper); color: var(--ink);
@@ -120,6 +140,55 @@
   }
   .small:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
   .small:focus-visible { outline: 3px dashed var(--pop); outline-offset: 3px; }
+  .small.danger { background: var(--pop); color: #fff; }
+  .stats .small { margin-top: 1.2rem; }
+
+  .link {
+    font: 600 .8rem "Rubik", system-ui, sans-serif;
+    background: none; border: 0; color: var(--ink); opacity: .75;
+    text-decoration: underline; cursor: pointer; padding: .15rem .25rem;
+  }
+  .link:hover { opacity: 1; }
+  .link:focus-visible { outline: 2px dashed var(--pop); outline-offset: 2px; }
+  .link:disabled { visibility: hidden; }
+  .undo { display: block; font-size: .85rem; padding: .3rem .6rem; margin: .2rem auto 0; visibility: hidden; }
+  .undo.show { visibility: visible; }
+
+  .who { display: flex; gap: .5rem; align-items: center; justify-content: flex-end; font-size: .85rem; font-weight: 600; }
+  .who input, dialog input {
+    font: 600 .9rem "Rubik", system-ui, sans-serif;
+    background: var(--paper); color: var(--ink);
+    border: 2px solid var(--ink); border-radius: 10px;
+    padding: .35rem .6rem; width: 9rem; max-width: 50vw;
+    box-shadow: 2px 2px 0 var(--shadow);
+  }
+  .who input:focus-visible, dialog input:focus-visible { outline: 3px dashed var(--pop); outline-offset: 3px; }
+
+  .last { font-size: .95rem; margin: 0 0 .8rem; line-height: 1.45; min-height: 1.4em; }
+  .last strong { font-weight: 800; }
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log li {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .3rem; align-items: center;
+    padding: .45rem 0; border-top: 2px dotted color-mix(in srgb, var(--ink) 35%, transparent);
+  }
+  .log .name { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log time { display: block; font-size: .8rem; opacity: .8; font-variant-numeric: tabular-nums; }
+  .more { font-size: .8rem; opacity: .7; margin: .6rem 0 0; }
+
+  dialog {
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 6px 6px 0 var(--shadow);
+    padding: 1.2rem 1.4rem; width: min(92vw, 380px); text-align: left;
+  }
+  dialog::backdrop { background: rgb(0 0 0 / .45); }
+  dialog p { margin: 0 0 1rem; line-height: 1.45; }
+  dialog label { display: grid; gap: .35rem; font-weight: 600; margin-bottom: 1.1rem; }
+  dialog label[hidden] { display: none; }
+  dialog input { width: 100%; max-width: none; font-size: 1rem; }
+  .dlg-btns { display: flex; flex-direction: row-reverse; gap: .6rem; }
+
+  .status { font-size: .9rem; margin: .8rem auto 0; max-width: 40ch; line-height: 1.45; opacity: .85; min-height: 1.3em; }
 
   .floater {
     position: fixed; pointer-events: none; z-index: 10;
@@ -128,6 +197,7 @@
     white-space: nowrap;
     animation: floatUp 1.3s ease-out forwards;
   }
+  .floater.other { font-size: 1rem !important; color: var(--sky); animation-duration: 1.8s; }
   @keyframes floatUp {
     0% { opacity: 0; transform: translate(-50%, 0) scale(.6) rotate(var(--r)); }
     15% { opacity: 1; transform: translate(-50%, -20px) scale(1.1) rotate(var(--r)); }
@@ -147,96 +217,101 @@
     .floater { display: none; }
   }
 
-  .status { font-size: .9rem; margin: .8rem auto 0; max-width: 40ch; line-height: 1.45; opacity: .85; min-height: 1.3em; }
-  .mine { font-size: .95rem; margin: .35rem 0 0; }
-  .small.danger { background: var(--pop); color: #fff; }
-  .small[hidden] { display: none; }
-  .gasp:disabled { cursor: progress; opacity: .6; }
-  .floater.other { font-size: 1rem !important; color: var(--sky); animation-duration: 1.8s; }
-
-  .who { display: flex; gap: .5rem; align-items: center; justify-content: flex-end; margin: -1rem 0 1rem; font-size: .85rem; font-weight: 600; }
-  .who input {
-    font: 600 .9rem "Rubik", system-ui, sans-serif;
-    background: var(--paper); color: var(--ink);
-    border: 2px solid var(--ink); border-radius: 10px;
-    padding: .3rem .6rem; width: 9rem; max-width: 50vw;
-    box-shadow: 2px 2px 0 var(--shadow);
+  /* layout overrides last, so they win over the base rules above */
+  @media (max-width: 999.98px) {
+    .page { gap: 1rem; }
+    .who.panel, .stats.panel { background: none; border: 0; box-shadow: none; padding: 0; text-align: center; }
   }
-  .undo {
-    font: 600 .85rem "Rubik", system-ui, sans-serif;
-    background: none; border: 0; color: var(--ink); opacity: .75;
-    text-decoration: underline; cursor: pointer;
-    display: block; padding: .3rem .6rem; margin: .2rem auto 0;
-    visibility: hidden;
+  @media (min-width: 1000px) {
+    .page {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 560px) minmax(0, 1fr);
+      grid-template-areas: "who center history" "stats center history";
+      grid-template-rows: auto 1fr;
+      align-items: start; gap: 1.5rem 2.5rem; padding-top: 1.5rem;
+    }
+    .who { flex-direction: column; align-items: stretch; }
+    .who input { width: 100%; max-width: none; }
+    .log { max-height: calc(100vh - 13rem); overflow-y: auto; }
   }
-  .undo.show { visibility: visible; }
-  .undo:hover { opacity: 1; }
-  .undo:focus-visible { outline: 3px dashed var(--pop); outline-offset: 2px; }
-  .who input:focus-visible { outline: 3px dashed var(--pop); outline-offset: 3px; }
-  .last { font-size: .95rem; margin: .7rem auto 0; max-width: 40ch; line-height: 1.45; min-height: 1.4em; }
-  .last strong { font-weight: 800; }
-  .floater.other { font-size: 1rem !important; }
 </style>
 </head>
 <body>
-<main>
-  <div class="who">
+<div class="page">
+  <div class="who panel">
     <label for="nick">Nickname</label>
     <input id="nick" type="text" maxlength="24" autocomplete="nickname" placeholder="Someone">
   </div>
 
-  <h1>Oh My Gosh!</h1>
-  <p class="sub">Something shocking happened? Press the face. Everyone on this page shares the same counter, live.</p>
+  <main>
+    <h1>Oh My Gosh!</h1>
 
-  <div class="stage">
-    <div class="bubble" id="bubble" aria-hidden="true">press me, I dare you</div>
-    <button class="gasp" id="gasp" aria-label="Say oh my gosh">
-      <svg viewBox="0 0 200 200" aria-hidden="true">
-        <!-- eyebrows -->
-        <path id="browL" class="face-ink" d="M52 62 q18 -14 36 -4 l-2 7 q-15 -8 -32 4 z"/>
-        <path id="browR" class="face-ink" d="M148 62 q-18 -14 -36 -4 l2 7 q15 -8 32 4 z"/>
-        <!-- eyes -->
-        <ellipse cx="70" cy="85" rx="15" ry="18" fill="#fff" stroke="currentColor" stroke-width="0"/>
-        <ellipse cx="130" cy="85" rx="15" ry="18" fill="#fff"/>
-        <circle id="pupilL" class="face-ink" cx="70" cy="88" r="7"/>
-        <circle id="pupilR" class="face-ink" cx="130" cy="88" r="7"/>
-        <!-- cheeks -->
-        <ellipse cx="45" cy="120" rx="12" ry="7" fill="#E6007E" opacity=".45"/>
-        <ellipse cx="155" cy="120" rx="12" ry="7" fill="#E6007E" opacity=".45"/>
-        <!-- mouth -->
-        <ellipse id="mouth" class="face-ink" cx="100" cy="140" rx="14" ry="16"/>
-        <!-- hands on cheeks appear at high counts -->
-        <g id="hands" opacity="0">
-          <ellipse cx="28" cy="140" rx="16" ry="24" fill="#FFD2A8" stroke="#2B0B3F" stroke-width="4"/>
-          <ellipse cx="172" cy="140" rx="16" ry="24" fill="#FFD2A8" stroke="#2B0B3F" stroke-width="4"/>
-        </g>
-      </svg>
-    </button>
-  </div>
+    <div class="stage">
+      <div class="bubble" id="bubble" aria-hidden="true">press me, I dare you</div>
+      <button class="gasp" id="gasp" aria-label="Say oh my gosh">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <!-- eyebrows -->
+          <path id="browL" class="face-ink" d="M52 62 q18 -14 36 -4 l-2 7 q-15 -8 -32 4 z"/>
+          <path id="browR" class="face-ink" d="M148 62 q-18 -14 -36 -4 l2 7 q15 -8 32 4 z"/>
+          <!-- eyes -->
+          <ellipse cx="70" cy="85" rx="15" ry="18" fill="#fff" stroke="currentColor" stroke-width="0"/>
+          <ellipse cx="130" cy="85" rx="15" ry="18" fill="#fff"/>
+          <circle id="pupilL" class="face-ink" cx="70" cy="88" r="7"/>
+          <circle id="pupilR" class="face-ink" cx="130" cy="88" r="7"/>
+          <!-- cheeks -->
+          <ellipse cx="45" cy="120" rx="12" ry="7" fill="#E6007E" opacity=".45"/>
+          <ellipse cx="155" cy="120" rx="12" ry="7" fill="#E6007E" opacity=".45"/>
+          <!-- mouth -->
+          <ellipse id="mouth" class="face-ink" cx="100" cy="140" rx="14" ry="16"/>
+          <!-- hands on cheeks appear at high counts -->
+          <g id="hands" opacity="0">
+            <ellipse cx="28" cy="140" rx="16" ry="24" fill="#FFD2A8" stroke="#2B0B3F" stroke-width="4"/>
+            <ellipse cx="172" cy="140" rx="16" ry="24" fill="#FFD2A8" stroke="#2B0B3F" stroke-width="4"/>
+          </g>
+        </svg>
+      </button>
+    </div>
 
-  <div class="count" id="count">…</div>
-  <p class="count-label" id="countLabel">oh my goshes</p>
-  <button class="undo" id="undo" type="button">undo last press</button>
+    <div class="count" id="count">…</div>
+    <p class="count-label" id="countLabel">oh my goshes</p>
+    <button class="link undo" id="undo" type="button">undo last press</button>
+    <p class="status" id="status"></p>
+  </main>
 
-  <div class="rank" id="rank">Totally unbothered</div>
-  <p class="next" id="next"></p>
-  <p class="last" id="omgLast"></p>
-  <p class="status" id="status"></p>
-
-  <div class="controls">
+  <section class="stats panel" aria-label="Level">
+    <div class="rank" id="rank">Totally unbothered</div>
+    <p class="next" id="next"></p>
     <button class="small" id="sound" aria-pressed="true">Sound: on</button>
-  </div>
+  </section>
 
-  <p class="sr-only" aria-live="polite" id="live"></p>
-</main>
+  <section class="history panel" aria-labelledby="historyTitle">
+    <h2 id="historyTitle">History</h2>
+    <p class="last" id="last"></p>
+    <ol class="log" id="log"></ol>
+    <p class="more" id="more" hidden></p>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <p id="dlgText"></p>
+    <label id="dlgNameRow">Name <input id="dlgName" type="text" maxlength="24" placeholder="Someone"></label>
+    <div class="dlg-btns">
+      <button class="small" id="dlgOk" value="ok">Save</button>
+      <button class="small" id="dlgCancel" value="cancel">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<p class="sr-only" aria-live="polite" id="live"></p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import {
-  getFirestore, doc, onSnapshot, setDoc, increment, serverTimestamp
+  getFirestore, doc, collection, query, orderBy, limit, onSnapshot,
+  writeBatch, runTransaction, updateDoc, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
-// ===== Paste your Firebase web app config here (it is safe to be public) =====
+// Firebase web app config (public by design; firestore.rules protect the data)
 const firebaseConfig = {
   apiKey: "AIzaSyDl9qbvwnSafhC5ICGV3aqyxR5eJIYkSqg",
   authDomain: "omg-counter-c8eb2.firebaseapp.com",
@@ -245,60 +320,50 @@ const firebaseConfig = {
   messagingSenderId: "672007046877",
   appId: "1:672007046877:web:491ceda64fd048724d7d34"
 };
-// ============================================================================
 
 const SOUND_KEY = "omg-sound";
 const NICK_KEY = "omg-nick";
 const MAX_PER_WRITE = 10;      // must match firestore.rules
-const FLUSH_MS = 4000;         // presses wait this long before sending, so they can be undone (rules forbid lowering a count)
+const FLUSH_MS = 4000;         // presses wait this long before sending, so "undo last press" can take them back
+const HISTORY_SIZE = 50;
+
+const PHRASES = ["oh my gosh", "OH MY GOSH", "oh. my. gosh.", "ohhh myyy goshhh", "OMG", "oh my GOODNESS",
+  "gasp!", "no way", "oh my gosh?!", "stop it right now", "I can't even", "my stars",
+  "good gracious", "OH. MY. GOSH.", "gosh gosh gosh", "clutches pearls"];
+const RANKS = [[0, "Totally unbothered"], [1, "Mildly surprised"], [10, "Raised one eyebrow"],
+  [25, "Clutching pearls"], [50, "Needs to sit down"], [100, "Fanning self dramatically"],
+  [200, "Has fainted onto a couch"], [500, "Soap opera protagonist"],
+  [1000, "Gasped so hard it echoed"], [2500, "Legally a gasp"],
+  [5000, "Oh my gosh has become everyone's personality"]];
 
 const $ = id => document.getElementById(id);
 const btn = $("gasp"), undoBtn = $("undo"), statusEl = $("status"), bubble = $("bubble"),
-      mouth = $("mouth"), hands = $("hands"), live = $("live"), soundBtn = $("sound"), nickInput = $("nick");
+      countEl = $("count"), labelEl = $("countLabel"), rankEl = $("rank"), nextEl = $("next"),
+      lastEl = $("last"), logEl = $("log"), moreEl = $("more"),
+      mouth = $("mouth"), hands = $("hands"), live = $("live"), soundBtn = $("sound"), nickInput = $("nick"),
+      dlg = $("dlg"), dlgText = $("dlgText"), dlgNameRow = $("dlgNameRow"), dlgName = $("dlgName"),
+      dlgOk = $("dlgOk"), dlgCancel = $("dlgCancel");
 
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const fmt = n => n.toLocaleString("en-US");
+const cleanName = s => s.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24) || "Someone";
 
 let soundOn = load(SOUND_KEY, "1") === "1";
 let audioCtx = null;
 nickInput.value = load(NICK_KEY, "");
 nickInput.addEventListener("input", () => save(NICK_KEY, nickInput.value));
 
-function nickname() {
-  const n = nickInput.value.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24);
-  return n || "Someone";
-}
+// ---- state ----
+let loaded = false, serverCount = 0, prevServerCount = null;
+let queued = 0, inFlight = 0, timer = null;
+let history = [], historyLoaded = false;   // newest first: { id, by, n, at: Date|null, pending }
+const shown = () => serverCount + queued;
 
-// ---- counter definitions ----
-const counters = {
-  omg: {
-    button: btn, countEl: $("count"), labelEl: $("countLabel"), lastEl: $("omgLast"),
-    one: "oh my gosh", many: "oh my goshes", lastWord: "oh my gosh",
-    phrases: ["oh my gosh", "OH MY GOSH", "oh. my. gosh.", "ohhh myyy goshhh", "OMG", "oh my GOODNESS",
-      "gasp!", "no way", "oh my gosh?!", "stop it right now", "I can't even", "my stars",
-      "good gracious", "OH. MY. GOSH.", "gosh gosh gosh", "clutches pearls"],
-    ranks: [[0, "Totally unbothered"], [1, "Mildly surprised"], [10, "Raised one eyebrow"],
-      [25, "Clutching pearls"], [50, "Needs to sit down"], [100, "Fanning self dramatically"],
-      [200, "Has fainted onto a couch"], [500, "Soap opera protagonist"],
-      [1000, "Gasped so hard it echoed"], [2500, "Legally a gasp"],
-      [5000, "Oh my gosh has become everyone's personality"]],
-    rankEl: $("rank"), nextEl: $("next")
-  }
-};
-for (const key in counters) {
-  Object.assign(counters[key], {
-    loaded: false, serverCount: 0, lastAt: null, lastBy: "",
-    queued: 0, inFlight: 0, timer: null, prevServerCount: null
-  });
-}
-
-const shown = c => c.serverCount + c.queued;
-
-function rankFor(n, list) {
-  let current = list[0], next = null;
-  for (let i = 0; i < list.length; i++) {
-    if (n >= list[i][0]) { current = list[i]; next = list[i + 1] || null; }
+function rankFor(n) {
+  let current = RANKS[0], next = null;
+  for (let i = 0; i < RANKS.length; i++) {
+    if (n >= RANKS[i][0]) { current = RANKS[i]; next = RANKS[i + 1] || null; }
   }
   return { current, next };
 }
@@ -321,39 +386,71 @@ function whenText(date) {
   return `${day} at ${time} (${rel})`;
 }
 
-function renderLast(c) {
-  c.lastEl.textContent = "";
-  if (!c.loaded) return;
-  if (!c.lastAt) { c.lastEl.textContent = `Nobody has said ${c.lastWord} yet.`; return; }
+function shortTime(date) {
+  if (!date) return "sending…";
+  const time = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  if (date.toDateString() === new Date().toDateString()) return time;
+  return `${date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}, ${time}`;
+}
+
+function renderLast() {
+  lastEl.textContent = "";
+  if (!historyLoaded) return;
+  const h = history[0];
+  if (!h) { lastEl.textContent = "No presses recorded yet."; return; }
   const b = document.createElement("strong");
-  b.textContent = c.lastBy || "Someone";   // textContent only: nicknames are untrusted input
-  c.lastEl.append(`Last ${c.lastWord}: `, b, `, ${whenText(c.lastAt)}`);
+  b.textContent = h.by;   // textContent only: names are untrusted input
+  lastEl.append("Last oh my gosh: ", b, h.at ? `, ${whenText(h.at)}` : "");
+}
+setInterval(renderLast, 1000);
+
+function linkButton(text, label, onClick, disabled) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "link"; b.textContent = text;
+  b.setAttribute("aria-label", label);
+  b.disabled = disabled;
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function renderHistory() {
+  logEl.replaceChildren(...history.map(h => {
+    const li = document.createElement("li");
+    const info = document.createElement("div");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = h.n > 1 ? `${h.by} ×${h.n}` : h.by;
+    const t = document.createElement("time");
+    t.textContent = shortTime(h.at);
+    if (h.at) t.dateTime = h.at.toISOString();
+    info.append(name, t);
+    const what = `${h.by}'s press at ${shortTime(h.at)}`;
+    li.append(info,
+      linkButton("edit", `Rename ${what}`, () => openDialog("edit", h), h.pending),
+      linkButton("delete", `Delete ${what}`, () => openDialog("delete", h), h.pending));
+    return li;
+  }));
+  moreEl.hidden = history.length < HISTORY_SIZE;
+  moreEl.textContent = `Showing the latest ${HISTORY_SIZE}.`;
+  renderLast();
 }
 
 function render() {
-  for (const key in counters) {
-    const c = counters[key];
-    if (!c.loaded) continue;
-    const n = shown(c);
-    c.countEl.textContent = fmt(n);
-    c.labelEl.textContent = n === 1 ? c.one : c.many;
-    const { current, next } = rankFor(n, c.ranks);
-    c.rankEl.textContent = current[1];
-    if (c.nextEl) c.nextEl.textContent = next ? `${fmt(next[0] - n)} more until: ${next[1]}` : "There is nothing left to be shocked by.";
-    renderLast(c);
-  }
-  const omg = counters.omg;
-  if (omg.loaded) {
-    const level = Math.min(shown(omg) / 200, 1);
-    mouth.setAttribute("rx", (14 + level * 12).toFixed(1));
-    mouth.setAttribute("ry", (16 + level * 14).toFixed(1));
-    hands.setAttribute("opacity", shown(omg) >= 25 ? "1" : "0");
-  }
-  undoBtn.classList.toggle("show", omg.queued > 0);
   soundBtn.textContent = "Sound: " + (soundOn ? "on" : "off");
   soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
+  undoBtn.classList.toggle("show", queued > 0);
+  if (!loaded) return;
+  const n = shown();
+  countEl.textContent = fmt(n);
+  labelEl.textContent = n === 1 ? "oh my gosh" : "oh my goshes";
+  const { current, next } = rankFor(n);
+  rankEl.textContent = current[1];
+  nextEl.textContent = next ? `${fmt(next[0] - n)} more until: ${next[1]}` : "There is nothing left to be shocked by.";
+  const level = Math.min(n / 200, 1);
+  mouth.setAttribute("rx", (14 + level * 12).toFixed(1));
+  mouth.setAttribute("ry", (16 + level * 14).toFixed(1));
+  hands.setAttribute("opacity", n >= 25 ? "1" : "0");
 }
-setInterval(() => { for (const k in counters) renderLast(counters[k]); }, 1000);
 
 // ---- effects ----
 function tone(steps, type) {
@@ -398,38 +495,25 @@ function floater(text, source, extraClass) {
 function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
 // ---- Firebase ----
-const configured = !firebaseConfig.apiKey.startsWith("PASTE");
-let db = null;
+let db = null, counterRef = null, pressesRef = null;
 
-function scheduleFlush(key) {
-  const c = counters[key];
-  clearTimeout(c.timer); c.timer = null;
+function scheduleFlush() {
+  clearTimeout(timer); timer = null;
   // over the per-write cap: send a full batch now but keep the newest press queued, so it stays undoable
-  if (c.queued > MAX_PER_WRITE) { flush(key); return; }
-  c.timer = setTimeout(() => { c.timer = null; flush(key); }, FLUSH_MS);
+  if (queued > MAX_PER_WRITE) { flush(); return; }
+  timer = setTimeout(() => { timer = null; flush(); }, FLUSH_MS);
 }
 
-function undo() {
-  const c = counters.omg;
-  if (c.queued === 0) return;
-  c.queued--;
-  if (c.queued === 0) { clearTimeout(c.timer); c.timer = null; }
-  live.textContent = "Last press undone";
-  render();
-}
-
-function flush(key) {
-  const c = counters[key];
-  if (!db || c.queued === 0) return;
-  const n = Math.min(c.queued, MAX_PER_WRITE);
-  c.queued -= n;
-  c.inFlight++;
-  // The local cache applies the increment immediately, so the count stays steady on screen.
-  setDoc(doc(db, "counters", key), {
-    count: increment(n),
-    lastAt: serverTimestamp(),
-    lastBy: nickname()
-  }, { merge: true })
+function flush() {
+  if (!db || queued === 0) return;
+  const n = Math.min(queued, MAX_PER_WRITE);
+  queued -= n;
+  inFlight++;
+  // One batch: raise the total and add a history entry. The local cache applies it immediately.
+  const batch = writeBatch(db);
+  batch.set(counterRef, { count: increment(n) }, { merge: true });
+  batch.set(doc(pressesRef), { by: cleanName(nickInput.value), at: serverTimestamp(), n });
+  batch.commit()
     .then(() => { if (statusEl.dataset.err) { setStatus(""); delete statusEl.dataset.err; } })
     .catch(err => {
       statusEl.dataset.err = "1";
@@ -437,19 +521,26 @@ function flush(key) {
       else if (err.code === "permission-denied") setStatus("That press was rejected by the server.");
       else setStatus("Couldn't save that press. Check your connection.");
     })
-    .finally(() => { c.inFlight--; });
-  if (c.queued > 0) scheduleFlush(key);
+    .finally(() => { inFlight--; });
+  if (queued > 0) scheduleFlush();
 }
 
-function press(key) {
-  const c = counters[key];
-  if (!c.loaded) return;
-  const before = rankFor(shown(c), c.ranks).current;
-  c.queued++;
-  scheduleFlush(key);
-  const phrase = c.phrases[Math.floor(Math.random() * c.phrases.length)];
-  bubble.textContent = phrase; floater(phrase, btn); gaspSound(); restart(c.countEl, "bump");
-  const after = rankFor(shown(c), c.ranks).current;
+function undo() {
+  if (queued === 0) return;
+  queued--;
+  if (queued === 0) { clearTimeout(timer); timer = null; }
+  live.textContent = "Last press undone";
+  render();
+}
+
+function press() {
+  if (!loaded) return;
+  const before = rankFor(shown()).current;
+  queued++;
+  scheduleFlush();
+  const phrase = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+  bubble.textContent = phrase; floater(phrase, btn); gaspSound(); restart(countEl, "bump");
+  const after = rankFor(shown()).current;
   if (after !== before) {
     restart(document.body, "shake");
     live.textContent = `New level: ${after[1]}`;
@@ -457,48 +548,91 @@ function press(key) {
   render();
 }
 
-function listen(key) {
-  const c = counters[key];
-  onSnapshot(doc(db, "counters", key), snap => {
-    const d = snap.data({ serverTimestamps: "estimate" }) || {};
+// ---- rename / delete a history entry (behind a confirm dialog) ----
+let dlgMode = null, dlgTarget = null;
+
+function openDialog(mode, h) {
+  dlgMode = mode; dlgTarget = h;
+  const what = h.n > 1 ? `${h.n} presses` : "press";
+  if (mode === "delete") {
+    dlgText.textContent = `Delete ${h.by}'s ${what} from ${shortTime(h.at)}? The total goes down by ${h.n}. This can't be undone.`;
+    dlgOk.textContent = "Delete"; dlgOk.classList.add("danger");
+  } else {
+    dlgText.textContent = `Rename the ${what} from ${shortTime(h.at)}.`;
+    dlgOk.textContent = "Save"; dlgOk.classList.remove("danger");
+    dlgName.value = h.by;
+  }
+  dlgNameRow.hidden = mode !== "edit";
+  dlg.returnValue = "";   // Esc keeps the previous returnValue, so clear it
+  dlg.showModal();
+  if (mode === "edit") dlgName.select(); else dlgCancel.focus();
+}
+
+dlg.addEventListener("close", () => {
+  if (dlg.returnValue !== "ok" || !dlgTarget) return;
+  const mode = dlgMode, ref = doc(pressesRef, dlgTarget.id);
+  dlgTarget = null;
+  const job = mode === "delete"
+    ? runTransaction(db, async tx => {
+        // read inside the transaction so the total drops by the entry's real size, and only once
+        const snap = await tx.get(ref);
+        if (!snap.exists()) return;
+        tx.delete(ref);
+        tx.update(counterRef, { count: increment(-snap.data().n) });
+      })
+    : updateDoc(ref, { by: cleanName(dlgName.value) });
+  job.then(() => { live.textContent = mode === "delete" ? "Press deleted" : "Press renamed"; })
+     .catch(() => setStatus(mode === "delete" ? "Couldn't delete that press." : "Couldn't rename that press."));
+});
+
+function listen() {
+  onSnapshot(counterRef, snap => {
+    const d = snap.data() || {};
     const newCount = typeof d.count === "number" ? d.count : 0;
-    // A server-confirmed rise that we didn't cause = someone else pressed (queued presses aren't sent yet)
-    if (c.prevServerCount !== null && newCount > c.prevServerCount &&
-        !snap.metadata.hasPendingWrites && c.inFlight === 0) {
-      const who = typeof d.lastBy === "string" && d.lastBy ? d.lastBy : "Someone";
-      const burst = Math.min(newCount - c.prevServerCount, 3);
-      for (let i = 0; i < burst; i++) {
-        setTimeout(() => floater(`${who}: ${c.lastWord}`, null, "other"), i * 180);
-      }
-      restart(c.countEl, "bump");
+    // a server-confirmed rise we didn't cause = someone else pressed
+    if (prevServerCount !== null && newCount > prevServerCount && !snap.metadata.hasPendingWrites && inFlight === 0) {
+      restart(countEl, "bump");
     }
-    c.prevServerCount = newCount;
-    c.serverCount = newCount;
-    c.lastAt = d.lastAt && typeof d.lastAt.toDate === "function" ? d.lastAt.toDate() : null;
-    c.lastBy = typeof d.lastBy === "string" ? d.lastBy : "";
-    if (!c.loaded) { c.loaded = true; c.button.disabled = false; }
+    prevServerCount = serverCount = newCount;
+    if (!loaded) { loaded = true; btn.disabled = false; }
     render();
   }, () => setStatus("Can't reach the shared counter right now. Reload to try again."));
+
+  onSnapshot(query(pressesRef, orderBy("at", "desc"), limit(HISTORY_SIZE)), snap => {
+    if (historyLoaded) {
+      for (const ch of snap.docChanges()) {
+        const d = ch.doc.data();
+        // someone else's fresh press (not ours, and not an old entry scrolling back into the list)
+        if (ch.type === "added" && !ch.doc.metadata.hasPendingWrites && d.at && Date.now() - d.at.toMillis() < 120000) {
+          for (let i = 0; i < Math.min(d.n, 3); i++) setTimeout(() => floater(`${d.by}: oh my gosh`, null, "other"), i * 180);
+        }
+      }
+    }
+    history = snap.docs.map(s => {
+      const d = s.data({ serverTimestamps: "estimate" });
+      return { id: s.id, by: d.by, n: d.n, at: d.at ? d.at.toDate() : null, pending: s.metadata.hasPendingWrites };
+    });
+    historyLoaded = true;
+    renderHistory();
+  }, () => setStatus("Can't load the history right now. Reload to try again."));
 }
 
 btn.disabled = true;
-if (!configured) {
-  setStatus("Not connected yet: paste your Firebase config into index.html.");
-} else {
-  try {
-    db = getFirestore(initializeApp(firebaseConfig));
-    listen("omg");
-  } catch (e) {
-    setStatus("Couldn't start the shared counter. Check the Firebase config.");
-  }
+try {
+  db = getFirestore(initializeApp(firebaseConfig));
+  counterRef = doc(db, "counters", "omg");
+  pressesRef = collection(counterRef, "presses");
+  listen();
+} catch (e) {
+  setStatus("Couldn't start the shared counter. Check the Firebase config.");
 }
 
 // flush queued presses when the tab is hidden or closed
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") for (const k in counters) { clearTimeout(counters[k].timer); counters[k].timer = null; flush(k); }
+  if (document.visibilityState === "hidden") { clearTimeout(timer); timer = null; flush(); }
 });
 
-btn.addEventListener("click", () => press("omg"));
+btn.addEventListener("click", press);
 undoBtn.addEventListener("click", undo);
 btn.addEventListener("pointerdown", () => btn.classList.add("pressed"));
 ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, () => btn.classList.remove("pressed")));

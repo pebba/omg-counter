@@ -2,38 +2,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Only one public document exists: counters/omg.
-    // Everyone may read it. Writes may only raise the count by 1 to 10,
-    // must stamp the server time, and may set a short nickname.
-    // Nobody can lower, overwrite or delete the count from the page.
-    // Reset from the Firebase console (delete the document).
-    match /counters/{counterId} {
-      allow read: if counterId == 'omg';
+    // For a trusted group: one counter (counters/omg) plus a history of presses under it.
+    // A press adds a history entry (who, when, 1 to 10 presses) and raises the count in one batch.
+    // Anyone on the page may rename or delete an entry; deleting lowers the count by the
+    // entry's size in the same transaction. The count can never go below 0.
+    match /counters/omg {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count is int
+        && request.resource.data.count >= 0;
 
-      allow create: if counterId == 'omg'
-        && hasExactShape()
-        && request.resource.data.count >= 1
-        && request.resource.data.count <= 10
-        && request.resource.data.lastAt == request.time
-        && validNickname(request.resource.data.lastBy);
-
-      allow update: if counterId == 'omg'
-        && hasExactShape()
-        && request.resource.data.count > resource.data.count
-        && request.resource.data.count <= resource.data.count + 10
-        && request.resource.data.lastAt == request.time
-        && validNickname(request.resource.data.lastBy);
-
-      allow delete: if false;
+      match /presses/{pressId} {
+        allow read, delete: if true;
+        allow create: if request.resource.data.keys().hasOnly(['by', 'at', 'n'])
+          && request.resource.data.keys().hasAll(['by', 'at', 'n'])
+          && validName(request.resource.data.by)
+          && request.resource.data.at == request.time
+          && request.resource.data.n is int
+          && request.resource.data.n >= 1
+          && request.resource.data.n <= 10;
+        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['by'])
+          && validName(request.resource.data.by);
+      }
     }
 
-    function hasExactShape() {
-      return request.resource.data.keys().hasOnly(['count', 'lastAt', 'lastBy'])
-        && request.resource.data.keys().hasAll(['count', 'lastAt', 'lastBy'])
-        && request.resource.data.count is int;
-    }
-
-    function validNickname(n) {
+    function validName(n) {
       return n is string && n.size() >= 1 && n.size() <= 24;
     }
 
